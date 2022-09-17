@@ -23,7 +23,7 @@ resource "google_compute_instance" "vm_instance" {
   machine_type = "f1-micro"
   tags         = ["web", "dev"]
   boot_disk {
-    image = "debian-cloud/debian-9"
+    image = "cos-cloud/cos-stable"
   }
   network_interface {
     network = google_compute_network.vpc_network.name
