@@ -29,7 +29,7 @@ data "aws_ami" "ubuntu" {
   owners = [local.canonical]
 }
 
-resource "aws_instacne" "example" {
+resource "aws_instance" "example" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.sg_8080.id]
@@ -38,7 +38,7 @@ resource "aws_instacne" "example" {
   apt-get update
   apt-get install -y apache2
   sed -i -e 's/80/8080/' /etc/apache2/ports.conf
-  echo "Hello World" > /var/www/html/index.html
+  echo "I'm learning about terraform state, hire me at https://www.linkedin.com/in/matthew-vander-hoff/ " > /var/www/html/index.html
   systemctl restart apache2
   EOF
 
