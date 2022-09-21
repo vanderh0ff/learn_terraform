@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     aws = {
-        source = "hashicorp/aws"
-        version = ">= 3.24.1"
+      source  = "hashicorp/aws"
+      version = ">= 3.24.1"
     }
   }
   required_version = ">= 1.1.5"
@@ -17,23 +17,23 @@ provider "aws" {
 }
 
 data "aws_ami" "ubuntu" {
-    most_recent = true
-    filter {
-      name = "name"
-      values = [ "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
-    }
-    filter {
-      name = "virtualization-type"
-      values = ["hvm"]
-    }
-    owners = [local.canonical]
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  owners = [local.canonical]
 }
 
 resource "aws_instacne" "example" {
-  ami = data.aws_ami.ubuntu.id
-  instance_type = "t2.micro"
+  ami                    = data.aws_ami.ubuntu.id
+  instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.sg_8080.id]
-  user_data = <<-EOF
+  user_data              = <<-EOF
   #!/bin/bash
   apt-get update
   apt-get install -y apache2
