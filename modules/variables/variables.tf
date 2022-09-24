@@ -13,7 +13,7 @@ variable "vpc_cidr_block" {
 
 variable "instance_count" {
   description = "Number of instances to provision"
-  type       = number
+  type        = number
   default     = 2
 }
 
@@ -69,7 +69,23 @@ variable "resource_tags" {
   description = "Tags to set for all resources"
   type        = map(string)
   default = {
-    project     = "learning-terraform",
+    project     = "learningterraform",
     environment = "dev"
   }
+ 
+  validation {
+    condition     = length(var.resource_tags["project"]) <= 16 && length(regexall("[^a-zA-Z0-9-]", var.resource_tags["project"])) == 0
+    error_message = "The project tag must be no more than 16 characters, and only contain letters, numbers, and hyphens."
+  }
+
+  validation {
+    condition     = length(var.resource_tags["environment"]) <= 8 && length(regexall("[^a-zA-Z0-9-]", var.resource_tags["environment"])) == 0
+    error_message = "The environment tag must be no more than 8 characters, and only contain letters, numbers, and hyphens."
+  }
+}
+
+variable "ec2_instance_type" {
+  description = "AWS EC2 instance type"
+  type        = string
+  default     = "t2.micro"
 }
