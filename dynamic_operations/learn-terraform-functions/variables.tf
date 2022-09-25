@@ -29,7 +29,7 @@ variable "user_department" {
 }
 
 variable "aws_amis" {
-  type = map
+  type = map(any)
   default = {
     "us-east-1" = "ami-0739f8cdb239fe9ae"
     "us-west-2" = "ami-008b09448b998a562"
