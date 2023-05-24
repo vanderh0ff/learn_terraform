@@ -1,0 +1,315 @@
+title:: terraform/studyguide
+
+- Understand infrastructure as code
+  collapsed:: true
+	- explain what iac is
+		- using code to define infrastructure.
+	- describe the advantages of iac
+		- limits knowledge loss when team members leave
+		- provides a consistant workflow for multiple cloud providers
+		- increase documentation available lacking in a ui workflow
+		- allows for reuse and packaging of knowledge
+		- allows for review and approval and tracking of changes
+- unstestand terraforms purpose vs other iac
+  collapsed:: true
+	- explaiun multi could and provider agnostic benifits
+		- provides a common interface for multiple cloud providers simplifiying the challanges faced with a multi cloud deployment
+		- multi could seperates failure domains allowing continued operation when a single cloud provider encounters problems
+	- the benifits of state
+		- a representation of the real world infrastructure
+		- allows dependency tracking in the graph
+		- allows tracking of infra changes
+		- tracks metatdata
+		- improves performance in large infrastructure
+- understand terraform basics
+  collapsed:: true
+	- handle terraform and provider installation and versioning
+		- `terraform.tf` file is the recommended location
+		- have a `terraform block`
+			- can version terraform itself in the block
+			- can specify required providers
+			- `~> 1.2.0` specifies greater than or equal to but less than 1.3.0
+		- install these with `terraform init`
+		- can upgrade versions with `terraform init -upgrade`
+			- rechecks registry for newer versions
+		- reusable modules should only specify minimum
+		- root modules should specify minimum and maximum
+	- describe plugin based architecture
+		- core
+			- statically compiled go binary
+			- handles resource state managment
+			- constructs the resource graph
+			- plan execution
+			- communicates with plugins over rpc
+		- plugins
+			- go binaries that interacte with terraform core with rpc
+			- each plugin exposes and implimentation for a specific service
+			- these plugins are called providers
+			- initialize any libraries needed to make api calls
+			- authenticate with the infra provider
+			- define resources that map to specific service
+	- demonstrate using multiple providers
+		- can use the alias attribute for provides to handle multiple
+			- useful for a single infra using multiple aws az
+			- can call the non default provider as `provdername.alias`
+	- describe how terraform finds and feteches providers
+		- required provides block in the terraform config shows what providers to get
+		- depending on the `source` argument terraform will search the offical registry, a private registry or source control to fetch the version
+		- it will write the version to a `terraform.lock.hcl` file so that others running this module will have the same provider, minimizing the chance for errors
+		- you can specify to store the providers to a central cache if you are using a centralized build system and dont want to constantly be redownloading providers
+	- explain when to use and not use provisioners and when to use local exec
+		- provisioners are a last resort
+		- add complexity and uncertanty to terraform usage
+		- their actions can not be modeled as part of the plan phase
+		- when not to use a provisioner
+			- passing data in to compute resource
+				- can use packer to build images with the data already in them
+				- can use cloud init files
+				- can use user data for startup scripts for many cloud providers
+			- running managment software like chef or ansible
+				- run these steps during image build
+				- hold off node registration until it is launched and finish that with user data or cloud init
+			- any place where first class terraform provider support is available
+		- when to use local exec
+			- as a temporary fix for functionality that doesn't exist yet
+				- be sure to open a bug to enable the functionality in a provider
+			- to execute scripts on a local or remote machine as part of resource creation or destruction
+				- bootstrap
+				- cleanup
+				- run config managment
+- use the terraform cli outside of core workflow
+  collapsed:: true
+	- terraform fmt
+		- used to standardize the formatting
+		- doesn't allow customization, is opionated, enforces the standard
+		- only checks the current directory, can use `-recursive` to check all sub directories
+		- can use `-diff` to see changes and not overwrite files
+	- terraform taint
+		- when you change a resource manually like responding to a production outage you need to let terraform know so it can destroy and rebuild the resource
+	- terraform import
+		- usage `teraform import resourcaddress`
+		- used to have terraform track resources it didn't create
+		- useful for codifying your existing infra
+	- terraform workspaces
+		- given a scenario choose when to use terraform workspace to create a workspace
+			- to create a distinct copy of a set of infrastructure to test a set of changes before modifying production infrastructure
+		- persistent data sored in the backedn belogs to a workspace
+		- some backends suuipportt multiple named workspaces allowing multiple states for a single configuration
+		- can deploy multiple instaces of one configuration without needing to configure a new backend or credentials
+			- A common use for multiple workspace is to create a parallel, distinct copy of
+			  a set of infrastructure to test a set of changes before modifying production infrastructure.
+	- given a scenario choose when to use terraform state to view the state
+		- use `terraform show` to get human readable output
+		- can use `terraform list` and `terraform -replace` to replace a manually modified piece of infra
+	- choose whne to enmable verbose logging and what the outcome / value is
+		- can set TF_LOG env var to the log level you want
+		- can be JSON TRACE DEBUG INFO WARN or ERROR
+		- can persist logs with TF_LOG_PATH
+		- this should be done to report bugs in terraform after steps to ensure that you have the right version and settings and that the issue is with terraform core or a provider
+- interact with terraform modules
+  collapsed:: true
+	- module source options
+		- local
+		- tf registry
+		- private registry
+		- github
+		- bitbucket
+		- generic git
+		- http urls
+		- s3 buckets
+		- gcs buckets
+		- modules in package sub-directories aka  a specific folder in a git repo or s3 bucket, not having it be the root checkout dir
+		-
+	- interact with modules inputs and outputs
+		- child modules expose items as outputs
+		- these outputs can be referenced from the calling module
+		- inputs are defined as variables in the child module
+		- these inputs are specified when calling the module
+	- describe variable scope within modules / child modules
+		- the calling module only has access to items defined as outputs of the child module
+		- the child module
+	- discover modules from the registry
+	- defining module versions
+		- specifying a version in the module block when pulling from a registry with the version key or passing a ref or branch value when checking out in github git http s3 or gcs
+		- uses the verson constrain syntax
+- navigate the terraform workflow
+  collapsed:: true
+	- define the core terraform workflow
+		- define what you need to do
+		- write the config
+		- run plan
+		- if plan good then apply
+		- repeat
+	- terraform init
+		- needed to pull in providers and create fresh start
+	- terraform validate
+		- makes sure the references and vars used are consistent in module, can help prevent naming issues and logical errors that pass terraform fmt
+	- terraform plan
+		- plans the changes, will generate the graph of infra changes to be made, you can save this with the out flag and execute it later, or just use it to validate that what terraform will do is what you expected to happen
+	- terraform apply
+		- will generate a plan if not passed in one
+		- will ask for confirmation after showing plan and changes that need to occur
+	- terraform destory
+		- special apply that will use the graph to decom all infra managed by terraform
+	-
+- implement and maintain state
+  collapsed:: true
+	- describe the default local backend
+		- json .tfstate file
+	- outline state locking
+		- used to prevent multiple tf runs from happening at once writing over state and causing the local state to not be an accurate map of the remote infra
+		- happens automatically when something could write to the state file
+	- handle backend authentication methods
+		- differ denpending on backend
+		- can be passwords or keys or files or env vars
+		- many differnt ways, want to provide ways to go and
+	- describe remote state
+		- hosts the state in a remote location
+		- good for multiple people to work on the same infra
+		- needs to support locking to not royally fuck up
+		- backends
+			- terraform enterprise
+			- s3 / object storage
+			- console
+			- http
+			- k8s
+			- postgres
+	- refresh will find changes made to tracked infra and update the state
+	- backend block best practices
+		- it is recommended to use env vars to supply credentials and other sensitive data
+		- if provided thru arguments when calling terraform or hardcoded values in the configuration those get saved in the .terraform subdirectory and in plan files, leaking the creds
+		- A configuration can only provide one backend block.
+		- A backend block cannot refer to named values (like input variables, locals, or data source attributes).
+	- secret management in statefiels
+		- contains senestive information
+		- initial passwords for some dbs
+		- inital ssh keys for some hosts
+		- unique ids for instaces
+		- anything in here could be private and not something you want to have in version control
+	- read generate and modify configs
+		- demonstrate use of variables and outputs
+			- can define vars with the variable block
+			- can have custom conditionals
+			- can have a default value or no set value
+			- can enforce type
+			- can refernecnt with var.varname
+			- valid data types are
+				- string
+				- number
+				- bool
+				- collection types
+					- list
+					- map
+					- set
+				- structure types
+					- object
+					- tuple
+		- you pass in vars in a .tfvar file, envvars, cli args, or in a calling block when using a child module
+		- outputs can expose information to the command line when a plan is finished or to a parent module
+		- outputs can be marked sensitive to suppress output in the cli
+	- secret injection best practices
+		- use vault
+		- use terraform cloud
+		- avoid putting secrets in config or state when possible
+		- request low ttl tokens
+	- complext types
+		- list, sequential values
+		- map, key value pairs
+		- set, unordered unique values with no other identifiers
+	- structural types
+		- object collection of named attributes each having their own type
+		- tuple, sequence of elements where each element has its own type
+	- create and differentiate data and resources
+		- datasoruces are not managed by terraform but used to get information from a provider
+			- common example is getting an ami id for launching an ec2 instance
+			- can be local only to render a template or read a local file
+			- can use the lifecycle tag to enforce pre or post conditions
+		- resources are managed by terraform and corrispond to a peice or peices of infrastructure
+			- the most important element in terraform lang
+			- can be low or high level concepts from networks and vpc to dns records
+			- uses meta args like `count` `for_each` `depends_on` `provider` `lifecycle`
+			- can use provisioners to preform post setup and pre destroy tasks
+				- provisionser are used as a last resort
+	- named values
+		- deals with the resource addressing
+			- `local.` for locals `var.` for vars `module.` for child modules
+			- block local vars like count.index each.key and each.value and self are used when specific meta blocks are used
+		- can use splat * to get all values of somethg that used count
+		- can use for expression to get map of a keyed item {for k, devv in aws_instacne.example.device : k => device.size}
+	- using built in functions
+		- example functions
+			- min
+			- keys
+			- file
+			- template pass a templlate file and object with the needed keys
+			- ```
+			  templatefile("user_data.tftpl", { department = var.user_department, name = var.user_name })
+			  ```
+			- timestamp
+			- uuid
+			- lookup
+				- gets a value for a matching key takes in a map and a key
+			- file reads the contents of a provided file
+			- setproduct
+				- gets the combiningations of elements from all given sets
+			- flatten
+				- flattens a nested list with a single list
+	- dynamic blocks
+		- ```
+		  dynamic "blocktype" {
+		    for_each = var.toiterate
+		    content { # the content of the generated block
+		      namespace = blocktype.value['key'] # value refers to the current item being iterated 
+		    }
+		  }	
+		  ```
+		- dynamic blocks cant fill in meta blocks only the normal args
+		- the for each value must be a collectionw with one element per desired block
+	- resource graph
+		- adds resource nodes
+		- resources are mapped to provisioners
+		- explicit dependancies are used to create edges
+		- any orphans are added to the graph if state is present
+		- resources are mapped to providers, each resource depeneds on the provider being configured
+		- resource and provider configs are used to determine dependancies, references to resource attributes are turned in to dependencies
+		- create the root node, have it point to every resource
+		- if a diff is present, spit nodes in to create and destroy so things are executed in right order
+		- validate graph and remove cycles, ensure a single root
+		- when walking a depth first teversal is done
+- undersand terraform cloud and enterprise capibilites
+  collapsed:: true
+	- describe beneifits of sentinel registry and workspaces
+		- sentinel
+			- policy as code, extra gonvernance, being able to define rules for the standards of infra and enforce them before they are created
+		- registry
+			- reduce duplicate work, easily allow for developers to share good configurations and minimize time new devs need to stand up production ready infra with little to no terraform knowledge
+		- workspaces
+			- logical seperation of components
+			- allows for fine grained access control of who can change what infrastrucutre
+			- cloud vs oss
+				- configs stored in verson control in cloud
+				- stored on disk in oss
+				- vars are managed by workspaces in cloud, can securly store secrets
+				- vars are in tfvars files or env vars in oss
+				- state is on a remote backend or on disk in oss
+				- state is in workspace in cloud
+				- creds are stored in shell env or entered in prompts in oss
+				- creds are sensitive vars in the workspace
+	- describe features of tf cloud
+		- ui and vcs dirven workflow
+		- speculative plans on pr
+		- autostarting runs
+		- sentinel policy framework
+			- enforcement levels
+				- hard manditory
+				- soft manditiory
+					- can be overriden manually if correct permissions are held
+				- advistory
+		- workspace access control
+		- manages tf in a consistant and reliable env
+		- easy access to shared and secret data
+		- access controles for approving infra changes
+		- detailed policy and governing configs
+	-
+	-
+	-
